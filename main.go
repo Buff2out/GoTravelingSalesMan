@@ -36,6 +36,49 @@ func fillPoints(fin []string, points []Point, amountPoints int) {
 	}
 }
 
+func partition(dists []float64, popul [][]int, low int, high int, pivot float64) int {
+	i := low
+	j := low
+	for i <= high {
+		if dists[i] > pivot {
+			i++
+		} else {
+			dists[i], dists[j] = dists[j], dists[i] // swapDists(i, j, dists);
+			popul[i], popul[j] = popul[j], popul[i] // swapChromo(i, j, popul);
+			i++
+			j++
+		}
+	}
+	return j - 1
+}
+
+func quickSort(dists []float64, popul [][]int, low int, high int) {
+	if low < high {
+		pivot := dists[high]
+		pos := partition(dists, popul, low, high, pivot)
+		quickSort(dists, popul, low, pos-1)
+		quickSort(dists, popul, pos+1, high)
+	}
+}
+
+func defineDist(graph [][]float64, chromoGen []int, amountPoints int, k int) float64 {
+	var summ float64 = 0
+	summ = summ + graph[0][chromoGen[0]]
+	for j := 0; j < amountPoints-2; j++ {
+		summ = summ + graph[chromoGen[j]][chromoGen[j+1]]
+	}
+	summ = summ + graph[0][chromoGen[amountPoints-2]]
+	return summ
+}
+
+func selectionAndSort(dists []float64, graph [][]float64, popul [][]int, amountPoints int, k int) {
+	// а вот селекция это уже серьёзно
+	for i := 0; i < 2*(amountPoints-k); i++ {
+		dists[i] = defineDist(graph, popul[i], amountPoints, k)
+	}
+	quickSort(dists, popul, 0, 2*(amountPoints-k)-1)
+}
+
 func printMtrx[T any](graph [][]T, n int) {
 	for i := 0; i < n; i++ {
 		fmt.Println(graph[i])
@@ -185,6 +228,7 @@ func main() {
 	for summ != 3 {
 		crossOver(popul, amountPoints, k)
 		toMutate(popul, amountPoints, k)
+		selectionAndSort(dists, graph, popul, amountPoints, k)
 		if theBest == dists[0] {
 			summ++
 		} else {
@@ -192,9 +236,13 @@ func main() {
 			summ = 0
 		}
 	}
-	printMtrx(graph, amountPoints)
-	printMtrx(popul, 2*(amountPoints-k))
-	fmt.Println(points)
-	fmt.Println(dists)
+	fmt.Printf("%.6f\n%d ", dists[0], 1)
+	for j := 0; j < amountPoints-1; j++ {
+		fmt.Printf("%d ", popul[0][j]+1)
+	}
+	// printMtrx(graph, amountPoints)
+	// printMtrx(popul, 2*(amountPoints-k))
+	// fmt.Println(points)
+	// fmt.Println(dists)
 
 }
